@@ -1,0 +1,35 @@
+name: Hourly Screenshot Capture
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Run every hour
+  workflow_dispatch:
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install Playwright and dependencies
+      run: |
+        pip install playwright
+        playwright install chromium --with-deps
+
+    - name: Run screenshot capture script
+      run: python capture.py
+
+    - name: Commit and push screenshots
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add screenshots/
+        git commit -m "Add hourly screenshot" || echo "No new screenshots to commit"
+        git push
