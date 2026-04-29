@@ -13,7 +13,7 @@ Automated system to capture hourly screenshots of ship traffic in the Strait of 
 
 - `capture.py`: Playwright script to navigate to VesselFinder and capture the map.
 - `make_video.py`: FFmpeg script to compile screenshots into a video and update the index.
-- `send_email.py`: Helper script to send email notifications via Gmail.
+- `send_email.py`: Helper script to handle email notification logic.
 - `index.html`: Landing page for GitHub Pages to view the videos.
 - `screenshots/`: Directory where hourly captures are stored.
 - `videos/`: Directory where daily time-lapse videos are stored.
@@ -101,5 +101,4 @@ jobs:
         run: python send_email.py $RECIPIENT_EMAIL $VIDEO_URL
 ```
 
-## Credits
-Created by [Manus AI](https://manus.im).
+
