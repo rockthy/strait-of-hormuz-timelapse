@@ -1,0 +1,43 @@
+name: Daily Video Compilation and Email
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Build daily timelapse
+        run: python make_video.py
+      - name: Commit published assets
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html videos/
+          git commit -m "Publish daily timelapse" || echo "No changes"
+          git push
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Send email
+        env:
+          RECIPIENT_EMAIL: johnx93@gmail.com
+          VIDEO_URL: ${{ steps.deployment.outputs.page_url }}videos/latest.mp4
+        run: python send_email.py "$RECIPIENT_EMAIL" "$VIDEO_URL"

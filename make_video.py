@@ -3,6 +3,26 @@ import subprocess
 import datetime
 import shutil
 
+
+def get_recent_screenshots(directory="screenshots", hours=24):
+    cutoff = datetime.datetime.now() - datetime.timedelta(hours=hours)
+    recent_screenshots = []
+
+    for filename in sorted(os.listdir(directory)):
+        if not (filename.startswith("hormuz_") and filename.endswith(".png")):
+            continue
+
+        try:
+            timestamp_str = filename[len("hormuz_"):-len(".png")]
+            captured_at = datetime.datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
+        except ValueError:
+            continue
+
+        if captured_at >= cutoff:
+            recent_screenshots.append(filename)
+
+    return recent_screenshots
+
 def update_index(date_str):
     if not os.path.exists("index.html"):
         return
@@ -25,11 +45,15 @@ def make_video():
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     output_file = f"videos/hormuz_timelapse_{today}.mp4"
     
-    # Get all screenshots
-    screenshots = sorted([f for f in os.listdir("screenshots") if f.startswith("hormuz_") and f.endswith(".png")])
+    if not os.path.isdir("screenshots"):
+        print("Screenshots directory does not exist.")
+        return None
+
+    # Use only the last 24 hours of captures for the daily timelapse.
+    screenshots = get_recent_screenshots()
     
     if not screenshots:
-        print("No screenshots found to make a video.")
+        print("No screenshots found from the last 24 hours to make a video.")
         return None
 
     # Create a temporary file list for ffmpeg

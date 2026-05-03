@@ -4,6 +4,8 @@ import datetime
 import os
 
 async def capture():
+    os.makedirs("screenshots", exist_ok=True)
+
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         context = await browser.new_context(
@@ -27,9 +29,6 @@ async def capture():
             # Sometimes it needs a bit more time to zoom and center correctly
             print("Waiting for map to center and zoom...")
             await asyncio.sleep(20)
-            
-            # Create screenshots directory
-            os.makedirs("screenshots", exist_ok=True)
             
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"screenshots/hormuz_{timestamp}.png"

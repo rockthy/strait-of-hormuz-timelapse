@@ -18,6 +18,11 @@ Automated system to capture hourly screenshots of ship traffic in the Strait of 
 - `screenshots/`: Directory where hourly captures are stored.
 - `videos/`: Directory where daily time-lapse videos are stored.
 
+## View the Timelapse
+
+- Landing page: `https://rockthy.github.io/strait-of-hormuz-timelapse/`
+- Latest MP4: `https://rockthy.github.io/strait-of-hormuz-timelapse/videos/latest.mp4`
+
 ## Setup Instructions
 
 ### 1. Enable GitHub Pages
@@ -32,8 +37,8 @@ Automated system to capture hourly screenshots of ship traffic in the Strait of 
 4. Check **Allow GitHub Actions to create and approve pull requests**.
 5. Click **Save**.
 
-### 3. Add Workflow Files
-Due to security restrictions, you must manually create the workflow files in the `.github/workflows/` directory:
+### 3. GitHub Actions Workflows
+The workflows are checked in under `.github/workflows/`:
 
 #### `.github/workflows/hourly_capture.yml`
 ```yaml
@@ -84,20 +89,24 @@ jobs:
         with:
           python-version: '3.x'
       - run: |
-          pip install playwright
-          playwright install chromium --with-deps
           sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: python make_video.py
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html videos/
+          git commit -m "Publish daily timelapse" || echo "No changes"
+          git push
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: 'videos'
+          path: '.'
       - id: deployment
         uses: actions/deploy-pages@v4
       - name: Send Email
         env:
           RECIPIENT_EMAIL: johnx93@gmail.com
-          VIDEO_URL: ${{ steps.deployment.outputs.page_url }}/hormuz_timelapse_$(date +%Y-%m-%d).mp4
+          VIDEO_URL: ${{ steps.deployment.outputs.page_url }}videos/latest.mp4
         run: python send_email.py $RECIPIENT_EMAIL $VIDEO_URL
 ```
 
