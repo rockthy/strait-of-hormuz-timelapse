@@ -38,6 +38,13 @@ def update_index(date_str):
         with open("index.html", "w") as f:
             f.write(content)
 
+
+def validate_video_file(path):
+    if not os.path.exists(path):
+        raise RuntimeError(f"Expected output video was not created: {path}")
+    if os.path.getsize(path) == 0:
+        raise RuntimeError(f"Output video is empty: {path}")
+
 def make_video():
     # Ensure the directory for videos exists
     os.makedirs("videos", exist_ok=True)
@@ -46,15 +53,13 @@ def make_video():
     output_file = f"videos/hormuz_timelapse_{today}.mp4"
     
     if not os.path.isdir("screenshots"):
-        print("Screenshots directory does not exist.")
-        return None
+        raise RuntimeError("Screenshots directory does not exist.")
 
     # Use only the last 24 hours of captures for the daily timelapse.
     screenshots = get_recent_screenshots()
     
     if not screenshots:
-        print("No screenshots found from the last 24 hours to make a video.")
-        return None
+        raise RuntimeError("No screenshots found from the last 24 hours to make a video.")
 
     # Create a temporary file list for ffmpeg
     with open("file_list.txt", "w") as f:
@@ -72,9 +77,11 @@ def make_video():
             output_file
         ]
         subprocess.run(command, check=True)
+        validate_video_file(output_file)
         
         # Create a copy as latest.mp4
         shutil.copy(output_file, "videos/latest.mp4")
+        validate_video_file("videos/latest.mp4")
         
         # Update index.html with the new video in the archive
         update_index(today)
@@ -83,10 +90,13 @@ def make_video():
         return output_file
     except Exception as e:
         print(f"Error creating video: {e}")
-        return None
+        raise
     finally:
         if os.path.exists("file_list.txt"):
             os.remove("file_list.txt")
 
 if __name__ == "__main__":
-    make_video()
+    try:
+        make_video()
+    except Exception:
+        raise SystemExit(1)
