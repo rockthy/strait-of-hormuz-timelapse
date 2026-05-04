@@ -65,14 +65,13 @@ def make_video():
     with open("file_list.txt", "w") as f:
         for img in screenshots:
             f.write(f"file 'screenshots/{img}'\n")
-            f.write("duration 0.5\n") # 0.5 seconds per frame
-        # Add the last image again to prevent ffmpeg from skipping it
-        f.write(f"file 'screenshots/{screenshots[-1]}'\n")
 
-    # Run ffmpeg to create the video
+    # Run ffmpeg to create the video.
+    # -r 2 means 2fps output = 0.5 seconds per frame.
     try:
         command = [
             "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "file_list.txt",
+            "-r", "2",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
             output_file
         ]
