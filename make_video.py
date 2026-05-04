@@ -4,14 +4,19 @@ import datetime
 import shutil
 
 
+def get_all_screenshots(directory="screenshots"):
+    screenshots = []
+    for filename in sorted(os.listdir(directory)):
+        if filename.startswith("hormuz_") and filename.endswith(".png"):
+            screenshots.append(filename)
+    return screenshots
+
+
 def get_recent_screenshots(directory="screenshots", hours=24):
     cutoff = datetime.datetime.now() - datetime.timedelta(hours=hours)
     recent_screenshots = []
 
-    for filename in sorted(os.listdir(directory)):
-        if not (filename.startswith("hormuz_") and filename.endswith(".png")):
-            continue
-
+    for filename in get_all_screenshots(directory):
         try:
             timestamp_str = filename[len("hormuz_"):-len(".png")]
             captured_at = datetime.datetime.strptime(timestamp_str, "%Y%m%d_%H%M%S")
@@ -57,9 +62,15 @@ def make_video():
 
     # Use only the last 24 hours of captures for the daily timelapse.
     screenshots = get_recent_screenshots()
-    
+
     if not screenshots:
-        raise RuntimeError("No screenshots found from the last 24 hours to make a video.")
+        # Fall back to all available screenshots if none exist within the last 24 hours
+        # (e.g. on first run or after a gap in captures).
+        print("No screenshots from the last 24 hours found. Falling back to all available screenshots.")
+        screenshots = get_all_screenshots()
+
+    if not screenshots:
+        raise RuntimeError("No screenshots found to make a video.")
 
     # Create a temporary file list for ffmpeg
     with open("file_list.txt", "w") as f:
