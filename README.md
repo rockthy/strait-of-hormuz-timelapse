@@ -37,7 +37,29 @@ Automated system to capture hourly screenshots of ship traffic in the Strait of 
 4. Check **Allow GitHub Actions to create and approve pull requests**.
 5. Click **Save**.
 
-### 3. GitHub Actions Workflows
+### 3. Configure Email Notifications
+
+The daily video workflow sends an email with a link to the new timelapse. It uses SMTP, configured via GitHub Actions secrets.
+
+#### Recommended: Gmail with an App Password
+1. Go to your Google Account → **Security** → **2-Step Verification** (must be enabled).
+2. At the bottom of that page, click **App passwords**.
+3. Create a new app password (name it anything, e.g. "Hormuz Timelapse").
+4. Copy the 16-character password shown.
+
+#### Add the following secrets to your repository
+Go to **Settings → Secrets and variables → Actions → New repository secret** and add:
+
+| Secret name | Value |
+|---|---|
+| `SMTP_SERVER` | `smtp.gmail.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | your Gmail address (e.g. `johnx93@gmail.com`) |
+| `SMTP_PASSWORD` | the 16-character App Password from step 4 |
+
+> **Note:** `RECIPIENT_EMAIL` is hard-coded in the workflow as `johnx93@gmail.com`. Change it there if you want to send to a different address.
+
+### 4. GitHub Actions Workflows
 The workflows are checked in under `.github/workflows/`:
 
 #### `.github/workflows/hourly_capture.yml`

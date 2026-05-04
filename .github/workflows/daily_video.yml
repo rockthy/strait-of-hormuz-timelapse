@@ -40,4 +40,8 @@ jobs:
         env:
           RECIPIENT_EMAIL: johnx93@gmail.com
           VIDEO_URL: ${{ steps.deployment.outputs.page_url }}videos/latest.mp4
-        run: python send_email.py "$RECIPIENT_EMAIL" "$VIDEO_URL"
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: python3 send_email.py "$RECIPIENT_EMAIL" "$VIDEO_URL"

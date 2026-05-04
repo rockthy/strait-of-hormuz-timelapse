@@ -16,25 +16,24 @@ def send_email(recipient_email, video_url):
     print(f"Subject: {subject}")
     print(f"Content: {content}")
     
-    # Example SMTP configuration (requires secrets in GitHub Actions)
-    # smtp_server = os.environ.get("SMTP_SERVER")
-    # smtp_port = os.environ.get("SMTP_PORT")
-    # smtp_user = os.environ.get("SMTP_USER")
-    # smtp_pass = os.environ.get("SMTP_PASSWORD")
-    
-    # if all([smtp_server, smtp_port, smtp_user, smtp_pass]):
-    #     msg = EmailMessage()
-    #     msg.set_content(content)
-    #     msg['Subject'] = subject
-    #     msg['From'] = smtp_user
-    #     msg['To'] = recipient_email
-    #     
-    #     with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
-    #         server.login(smtp_user, smtp_pass)
-    #         server.send_message(msg)
-    #     print("Email sent via SMTP.")
-    # else:
-    #     print("SMTP credentials not found. Email not sent.")
+    smtp_server = os.environ.get("SMTP_SERVER")
+    smtp_port = int(os.environ.get("SMTP_PORT", 465))
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_pass = os.environ.get("SMTP_PASSWORD")
+
+    if all([smtp_server, smtp_user, smtp_pass]):
+        msg = EmailMessage()
+        msg.set_content(content)
+        msg['Subject'] = subject
+        msg['From'] = smtp_user
+        msg['To'] = recipient_email
+
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+        print("Email sent via SMTP.")
+    else:
+        print("SMTP credentials not configured. Set SMTP_SERVER, SMTP_USER, and SMTP_PASSWORD secrets. Email not sent.")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
