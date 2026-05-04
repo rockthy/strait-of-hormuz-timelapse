@@ -4,6 +4,33 @@ import datetime
 import os
 
 
+TARGET_LAT = 26.5
+TARGET_LON = 56.3
+TARGET_ZOOM = 8
+TARGET_QUERIES = [
+    "Strait of Hormuz",
+    "26.5,56.3",
+    "Bandar Abbas, Iran",
+]
+
+
+async def focus_map_on_hormuz(page):
+    search_input = page.locator('input[placeholder="Ship / Port / Container"]')
+    if await search_input.count() == 0:
+        print("Map search input not found; relying on URL coordinates.")
+        return
+
+    # Try geographic name first, then coordinate/text fallbacks.
+    for query in TARGET_QUERIES:
+        try:
+            await search_input.fill(query)
+            await page.keyboard.press("Enter")
+            await asyncio.sleep(4)
+            print(f"Attempted map focus using query: {query}")
+        except Exception as query_error:
+            print(f"Failed to focus map with query '{query}': {query_error}")
+
+
 async def capture():
     os.makedirs("screenshots", exist_ok=True)
 
@@ -25,9 +52,7 @@ async def capture():
         page.set_default_navigation_timeout(45000)
         page.set_default_timeout(30000)
         
-        # Using a more direct URL if possible, or ensuring the map is centered
-        # VesselFinder's main map can be tricky. Let's try to wait for the canvas or specific map elements.
-        url = "https://www.vesselfinder.com/?lat=26.5&lon=56.3&zoom=8"
+        url = f"https://www.vesselfinder.com/?lat={TARGET_LAT}&lon={TARGET_LON}&zoom={TARGET_ZOOM}"
         print(f"Navigating to {url}...")
         
         try:
@@ -36,6 +61,9 @@ async def capture():
             # Wait for the map canvas to appear
             print("Waiting for map canvas...")
             await page.wait_for_selector("canvas", timeout=30000)
+
+            # Force focus on Strait of Hormuz in case the site falls back to a prior/default viewport.
+            await focus_map_on_hormuz(page)
             
             # Sometimes it needs a bit more time to zoom and center correctly
             print("Waiting for map to center and zoom...")
