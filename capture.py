@@ -15,15 +15,17 @@ TARGET_QUERIES = [
 
 
 async def focus_map_on_hormuz(page):
-    """Force map to center on Strait of Hormuz by searching and verifying zoom level."""
+    """Force map to center on Strait of Hormuz by searching and verifying location."""
     search_input = page.locator('input[placeholder="Ship / Port / Container"]')
     if await search_input.count() == 0:
         print("Map search input not found; relying on URL coordinates.")
         return
 
-    # Keep trying to center the map until zoom level indicates we're zoomed in enough.
-    # A zoomed-in view of Hormuz should be zoom 8+; world view is typically zoom 1-3.
+    # Keep trying to center the map until coordinates are close to target.
+    # Target: 26.5°N, 56.3°E (Strait of Hormuz)
     max_retries = 5
+    tolerance = 5.0  # Accept if within 5 degrees
+    
     for attempt in range(max_retries):
         try:
             # Try geographic name first, then coordinates
@@ -32,26 +34,39 @@ async def focus_map_on_hormuz(page):
             await page.keyboard.press("Enter")
             await asyncio.sleep(3)
             
-            # Check if we've zoomed in. Try to read the zoom level from the page.
-            zoom_level = await page.evaluate("""
+            # Try to read current coordinates from the map display.
+            # VesselFinder shows coordinates in the bottom-left corner.
+            coords = await page.evaluate("""
                 () => {
-                    const vfmap = window.vfmap;
-                    if (!vfmap || !vfmap.trackZoom) return null;
-                    return vfmap.trackZoom;
+                    // Try to find coordinate display in the map UI
+                    const coordText = document.body.innerText;
+                    const latMatch = coordText.match(/Lat:\\s*([\\d.-]+)/);
+                    const lonMatch = coordText.match(/Lon:\\s*([\\d.-]+)/);
+                    
+                    if (latMatch && lonMatch) {
+                        return {lat: parseFloat(latMatch[1]), lon: parseFloat(lonMatch[1])};
+                    }
+                    return null;
                 }
             """)
             
-            print(f"Attempt {attempt + 1}: searched '{query}', zoom level: {zoom_level}")
-            
-            # If zoom is reasonable (8+), we're good
-            if zoom_level and zoom_level >= 8:
-                print(f"Map centered on Strait of Hormuz at zoom level {zoom_level}")
-                return
+            if coords:
+                print(f"Attempt {attempt + 1}: searched '{query}', map center: {coords['lat']:.2f}°N, {coords['lon']:.2f}°E")
+                
+                # Check if we're close to target (26.5, 56.3)
+                lat_diff = abs(coords['lat'] - TARGET_LAT)
+                lon_diff = abs(coords['lon'] - TARGET_LON)
+                
+                if lat_diff < tolerance and lon_diff < tolerance:
+                    print(f"Map centered on Strait of Hormuz!")
+                    return
+            else:
+                print(f"Attempt {attempt + 1}: searched '{query}', could not read coordinates")
                 
         except Exception as e:
             print(f"Search attempt {attempt + 1} failed: {e}")
     
-    print("Warning: Could not verify proper map centering after retries.")
+    print("Warning: Could not verify proper map centering after retries; proceeding with screenshot.")
 
 
 async def capture():
