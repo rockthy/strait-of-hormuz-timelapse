@@ -60,13 +60,13 @@ def make_video():
     if not os.path.isdir("screenshots"):
         raise RuntimeError("Screenshots directory does not exist.")
 
-    # Use only the last 24 hours of captures for the daily timelapse.
-    screenshots = get_recent_screenshots()
+    # Use the last 48 hours so the timelapse still has content on days where
+    # some hourly captures failed. 24h is the ideal case; 48h is the fallback.
+    screenshots = get_recent_screenshots(hours=48)
 
     if not screenshots:
-        # Fall back to all available screenshots if none exist within the last 24 hours
-        # (e.g. on first run or after a gap in captures).
-        print("No screenshots from the last 24 hours found. Falling back to all available screenshots.")
+        # Fall back to all available screenshots if none exist within 48 hours.
+        print("No screenshots from the last 48 hours found. Falling back to all available screenshots.")
         screenshots = get_all_screenshots()
 
     if not screenshots:
@@ -78,11 +78,12 @@ def make_video():
             f.write(f"file 'screenshots/{img}'\n")
 
     # Run ffmpeg to create the video.
-    # -r 2 means 2fps output = 0.5 seconds per frame.
+    # -r 1 means 1fps output = 1 second per frame.
+    # With 24 hourly frames this gives a ~24 second daily timelapse.
     try:
         command = [
             "ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", "file_list.txt",
-            "-r", "2",
+            "-r", "1",
             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",
             output_file
         ]
