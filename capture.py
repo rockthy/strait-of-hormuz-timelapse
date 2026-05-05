@@ -15,20 +15,43 @@ TARGET_QUERIES = [
 
 
 async def focus_map_on_hormuz(page):
+    """Force map to center on Strait of Hormuz by searching and verifying zoom level."""
     search_input = page.locator('input[placeholder="Ship / Port / Container"]')
     if await search_input.count() == 0:
         print("Map search input not found; relying on URL coordinates.")
         return
 
-    # Try geographic name first, then coordinate/text fallbacks.
-    for query in TARGET_QUERIES:
+    # Keep trying to center the map until zoom level indicates we're zoomed in enough.
+    # A zoomed-in view of Hormuz should be zoom 8+; world view is typically zoom 1-3.
+    max_retries = 5
+    for attempt in range(max_retries):
         try:
+            # Try geographic name first, then coordinates
+            query = TARGET_QUERIES[attempt % len(TARGET_QUERIES)]
             await search_input.fill(query)
             await page.keyboard.press("Enter")
-            await asyncio.sleep(4)
-            print(f"Attempted map focus using query: {query}")
-        except Exception as query_error:
-            print(f"Failed to focus map with query '{query}': {query_error}")
+            await asyncio.sleep(3)
+            
+            # Check if we've zoomed in. Try to read the zoom level from the page.
+            zoom_level = await page.evaluate("""
+                () => {
+                    const vfmap = window.vfmap;
+                    if (!vfmap || !vfmap.trackZoom) return null;
+                    return vfmap.trackZoom;
+                }
+            """)
+            
+            print(f"Attempt {attempt + 1}: searched '{query}', zoom level: {zoom_level}")
+            
+            # If zoom is reasonable (8+), we're good
+            if zoom_level and zoom_level >= 8:
+                print(f"Map centered on Strait of Hormuz at zoom level {zoom_level}")
+                return
+                
+        except Exception as e:
+            print(f"Search attempt {attempt + 1} failed: {e}")
+    
+    print("Warning: Could not verify proper map centering after retries.")
 
 
 async def capture():
